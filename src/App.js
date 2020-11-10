@@ -4,9 +4,10 @@ import './App.css';
 function App() {
   const [input, setInput] = useState({
     name: "",
-    phoneNo: "", 
+    phoneNumber: "", 
     address: ""
   })
+  const [contactToEdit, setContactToEdit] = useState(null)
   const [contacts, setContacts] = useState([])
 
   useEffect(() => {
@@ -24,55 +25,77 @@ function App() {
     e.preventDefault();
     const newInput = {
       name: input.name,
-      phoneNumber: input.phoneNo,
-      id: new Date().getTime()
+      phoneNumber: input.phoneNumber,
+      id: input.id || new Date().getTime(),
+      address: input.address
     }
-    const mergedInput = [...contacts,newInput]
+    const iterableContacts = contacts || []
+    let mergedInput = [...iterableContacts,newInput]
+    if(input.id) {
+      mergedInput = contacts.map(contact => contact.id === input.id ? 
+        {...contact, name: input.name, address: input.address, phoneNumber: input.phoneNumber}
+         : contact
+      )
+    }
     setContacts(mergedInput);
     const jsonNewInput = JSON.stringify(mergedInput);
     localStorage.setItem("phonebook",jsonNewInput);
     setInput({
       name: "",
-      phoneNo: "", 
+      phoneNumber: "", 
       address: ""
     })
-      
-
-
+    setContactToEdit(null)
+  }
+  function handleDelete(contactId) {
+    // const filteredContacts = contacts.filter(function(contact) {
+    //   return contact.id !== contactId
+    // })
+    const filteredContacts = contacts.filter((contact) => contact.id !== contactId)
+    setContacts(filteredContacts)
+    localStorage.setItem("phonebook", JSON.stringify(filteredContacts))
+  }
+  function handleEdit(contact) {
+    setContactToEdit(contact)
+    setInput(contact)
   }
   return (
     <div className="container">
       <div className="contact-container">
         <div className="contact-heading">Phonebook</div>
         <form className="contact-form" onSubmit = {e => handleSubmit(e)}>
-          <div className="contact-form-heading">Add new Contact</div>
+          <div className="contact-form-heading">{contactToEdit ? "Edit" : "Add new"} Contact</div>
           <div className="contact-input-container">
             <label className="contact-label">Name</label>
             <input name="name" type="text" className="contact-input" value={input.name} onChange = {e => handleChange(e) } />
           </div>
           <div className="contact-input-container">
             <label className="contact-label">Phone Number</label>
-            <input name="phoneNo" type="text" className="contact-input" value={input.phoneNo} onChange = {e => handleChange(e)} />
+            <input name="phoneNumber" type="text" className="contact-input" value={input.phoneNumber} onChange = {e => handleChange(e)} />
           </div>
           <div className="contact-input-container">
             <label className="contact-label">Address</label>
             <input name="address" type="text" className="contact-input" value={input.address} onChange = {e => handleChange(e)} />
           </div>
-          <button className="contact-form-submit">Add Contact</button>
+          <button className="contact-form-submit">{contactToEdit ? "Update" : "Create"} Contact</button>
         </form>
         <div className="contact-body">
         {
-          contacts.map(contact => (
+          (contacts && contacts.length > 0) ? (contacts.map(contact => (
             <div className="contact" key={contact.id}>
               <div className="contact-details">
                 <div className="contact-name">{contact.name}</div>
                 <div className="contact-phone">{contact.phoneNumber}</div>
+                <div className="contact-phone">{contact.address}</div>
               </div>
               <div className="contact-action">
-                <button>Delete</button>
+                <button onClick = {() => handleEdit(contact)}>Edit</button>
+                <button onClick = {() => handleDelete(contact.id)}>Delete</button>
               </div>
             </div>
-          ))
+          ))) : (
+            <div>No contact here. Be the first to add</div>
+          )
         }
           
         </div>
